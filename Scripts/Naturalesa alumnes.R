@@ -22,14 +22,18 @@ dades_obertes <- read_excel("D:/previsio_professorat_prim_inf/Dades/Centres_educ
 ## Centres dels alumnes
 
 alumnes_naturalesa_centre <- alumnes_raw %>% 
-  left_join(dades_obertes) %>% 
-  filter(is.na(nom_naturalesa))
+  left_join(dades_obertes) 
+
+## Proporció de missings
 
 alumnes_naturalesa_centre %>% 
-  count(nom_naturalesa)
+  count(nom_naturalesa) %>% 
+  mutate(share = n/sum(n)*100)
 
 
-# write_dta(
-#   alumnes_naturalesa_centre,
-#   "Z:/332/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/alumnes/alumnes_panell.dta"
-# )
+# Exportar dades ----
+
+write_dta(
+  alumnes_naturalesa_centre,
+  "Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/alumnes/primaria/alumnes_panell.dta"
+)
