@@ -188,6 +188,61 @@ entrades_plot %>%
 
 
 ggsave("Outputs/inf_prim_entrades_borsa_predicció.png", width = 6, height = 4)
+
+
+
+
+entrades_plot_esp <- entrades %>% 
+  filter(especialitat %in% c(especialitats_primaria)) %>% 
+  select(-entrades_netes) %>% 
+  pivot_longer(
+    contains("entrades_netes"),
+    names_to = "escenari",
+    values_to = "value"
+  ) %>% 
+  mutate(escenari = str_replace(escenari, "^entrades_netes_", "")) %>% 
+  mutate(value_pre = case_when(
+    curs_academic <= 2024 ~ value)) %>% 
+  mutate(value_post = case_when(
+    curs_academic >= 2024 ~ value)) %>% 
+  group_by(curs_academic, escenari, especialitat) %>% 
+  summarise(
+    value = sum(value),
+    value_pre = sum(value_pre),
+    value_post = sum(value_post),
+  ) %>% 
+  ungroup() %>%
+  mutate(escenari = paste0(toupper(substr(escenari, 1, 1)),
+                           tolower(substr(escenari, 2, nchar(escenari))))) %>%   
+  mutate(curs_academic = paste0(as.character(curs_academic), "-", as.character(curs_academic + 1))) 
+
+entrades_plot_esp %>% 
+  ggplot(aes(x = curs_academic,
+             y = value_post)) +
+  geom_line(aes(y = value_pre),
+            group = 1,
+            color = paleta_ivalua[1],
+            size = 1.2) +
+  geom_line(aes(color = escenari,
+                y = value_post),
+            group = 1,
+            size = 1.2) +
+  scale_color_manual(values = c("Alt" = paleta_ivalua[3],
+                                "Mig" = paleta_ivalua[5],
+                                "Baix" = paleta_ivalua[10])) +
+  theme_ivalua(axis_text_y = T) +
+  # scale_y_discrete(breaks = seq("2019-2020", 2022)) +
+  labs(color = "Escenari") +
+  facet_wrap(~especialitat, scales = "free_y")
+  geom_text(
+    data = entrades_plot %>% filter(curs_academic == max(curs_academic)),
+    aes(label = value_post,
+        color = escenari),
+    vjust = .5, hjust = -.1,
+    show.legend = FALSE) +
+  scale_x_discrete(expand = expansion(mult = c(0.05, 0.1))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
   
 
 

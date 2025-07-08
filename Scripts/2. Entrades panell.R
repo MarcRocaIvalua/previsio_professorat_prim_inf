@@ -11,14 +11,17 @@ panell_pers_ent <- read_dta("Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata
 
 # Importar dades de sortides ----
 
-cursos <- c("24-25", "25-26", "26-27", "27-28",
-            "28-29", "29-30", "30-31", "31-32")
+cursos <- c("24-25")
+# "25-26", "26-27", "27-28",
+# "28-29", "29-30", "30-31", "31-32")
 
 
 importar_sortides <- function(curs){
-  # curs <- "25-26"
   
-  read_dta(paste0("Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/sortides/sortides", curs, ".dta")) %>% 
+  # curs <- "24-25"
+  
+  read_dta(paste0("Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/sortides/infantil i primària/sortides", curs, ".dta")) %>% 
+    mutate(sortides_mean = round(p_sortida1 * n)) %>% 
     select(especialitat = area_educativa, sortides_mean) %>% 
     mutate(curs = curs)
   
@@ -26,11 +29,11 @@ importar_sortides <- function(curs){
 
 # Unir sortides per curs
 
-sortides <- map_dfr(cursos, importar_sortides) %>% 
-  bind_rows(
-    read_dta("Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/sortides/sortides23-24.dta") %>% 
-      select(especialitat = area_educativa, sortides_mean = sortides_previstes) %>% 
-      mutate(curs = "23-24")) %>% 
+sortides <- map_dfr(cursos, importar_sortides) %>%  
+  # bind_rows(
+  #   read_dta("Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/sortides/sortides23-24.dta") %>% 
+  #     select(especialitat = area_educativa, sortides_mean = sortides_previstes) %>% 
+  #     mutate(curs = "23-24")) %>% 
   filter(especialitat %in% especialitats_primaria)
 
 especialitats_sortides <- sortides %>% 
@@ -44,10 +47,17 @@ entrades_panell <- panell_pers_ent %>%
          especialitat = area_educativa, contains("mes_naixement"),
          # any_naix,
          # share_imm_mig = share_imm, renda_bruta_llar_norm, cmc,
-         contains("jornada"),
-         entrada) %>% 
+         contains("jornada")) %>% 
   # seleccionar observacions quan entren
+  group_by(dni) %>%
+  mutate(any_lag = lag(any)) %>% 
+  mutate(entrada = case_when(
+    any != (any_lag - 1) ~ 0,
+    T ~ 1
+  )) %>% 
+  ungroup() %>% 
   filter(entrada == 1) %>% 
+  filter(any != 2015) %>% 
   # seleccionar especialitats d'interès
   filter(especialitat %in% c(especialitats_sortides))
 
@@ -108,7 +118,7 @@ entrades_panell %>%
   facet_wrap(~ pla_a_a,
              scales = "free") +
   theme_minimal() +
-  theme(legend.position = "none") +
+  # theme(legend.position = "none") +
   labs(title = "Nous")
 
 
@@ -213,8 +223,8 @@ entrades %>% distinct(id, curs_sortida) %>% count(curs_sortida)
 
 write_dta(
   entrades %>%
-    filter(curs_sortida == "31-32"),
-  "Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/entrades creades/entrades_panell_32_32.dta"
+    filter(curs_sortida == "24-25"),
+  "Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/entrades_creades_inf_prim/entrades_panell_25_26.dta"
 )
 
 
