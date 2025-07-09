@@ -21,7 +21,6 @@ importar_sortides <- function(curs){
   # curs <- "24-25"
   
   read_dta(paste0("Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/sortides/infantil i primària/sortides", curs, ".dta")) %>% 
-    mutate(sortides_mean = round(p_sortida1 * n)) %>% 
     select(especialitat = area_educativa, sortides_mean) %>% 
     mutate(curs = curs)
   
@@ -30,10 +29,11 @@ importar_sortides <- function(curs){
 # Unir sortides per curs
 
 sortides <- map_dfr(cursos, importar_sortides) %>%  
-  # bind_rows(
-  #   read_dta("Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/sortides/sortides23-24.dta") %>% 
-  #     select(especialitat = area_educativa, sortides_mean = sortides_previstes) %>% 
-  #     mutate(curs = "23-24")) %>% 
+  bind_rows(
+    read_dta("Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/sortides/infantil i primària/sortides23-24.dta") %>%
+      mutate(sortides_mean = p_sortida1 * n) %>% 
+      select(especialitat = area_educativa, sortides_mean) %>%
+      mutate(curs = "23-24")) %>%
   filter(especialitat %in% especialitats_primaria)
 
 especialitats_sortides <- sortides %>% 
@@ -215,7 +215,7 @@ entrades <- sortides %>%
   mutate(curs_sortida = paste0(as.numeric(str_sub(curs,1,2)) - 1, "-", as.numeric(str_sub(curs,4,5)) - 1)) %>% 
   relocate(curs_sortida, .after = curs) %>% 
   mutate(curs = paste0(as.character(any - 2000), "-", as.character(any - 1999))) %>% 
-  mutate(t = expanded + 1)
+  mutate(t = any - 2014)
 
 
 
@@ -223,7 +223,7 @@ entrades %>% distinct(id, curs_sortida) %>% count(curs_sortida)
 
 write_dta(
   entrades %>%
-    filter(curs_sortida == "24-25"),
+    filter(curs_sortida %in% c("24-25")),
   "Z:/19137_Unitat_Segura_Dades/2025_PROFESSORAT/Stata/entrades_creades_inf_prim/entrades_panell_25_26.dta"
 )
 
